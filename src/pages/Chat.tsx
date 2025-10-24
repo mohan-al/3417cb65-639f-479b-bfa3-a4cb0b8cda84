@@ -57,7 +57,7 @@ const Chat = () => {
     }
   };
 
-  if (loading) {
+  if (loading || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-muted-foreground">Loading...</div>
@@ -80,7 +80,7 @@ const Chat = () => {
         
         <ChatMessages
           selectedContact={selectedContact}
-          currentUserId={user!.id}
+          currentUserId={user.id}
         />
       </div>
     </div>
