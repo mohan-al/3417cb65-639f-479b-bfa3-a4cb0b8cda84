@@ -39,17 +39,40 @@ const Chat = () => {
   const fetchContacts = async () => {
     try {
       setLoadingContacts(true);
-      const { data, error } = await supabase
+      
+      // First get contacts
+      const { data: contactsData, error: contactsError } = await supabase
         .from('contacts')
-        .select(`
-          *,
-          profile:profiles!contacts_contact_id_fkey(username, full_name, avatar_url)
-        `)
+        .select('*')
         .eq('user_id', user!.id);
 
-      if (error) throw error;
+      if (contactsError) throw contactsError;
 
-      setContacts(data as any || []);
+      if (!contactsData || contactsData.length === 0) {
+        setContacts([]);
+        return;
+      }
+
+      // Then get profiles for those contacts
+      const contactIds = contactsData.map(c => c.contact_id);
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('user_id, username, full_name, avatar_url')
+        .in('user_id', contactIds);
+
+      if (profilesError) throw profilesError;
+
+      // Combine the data
+      const contactsWithProfiles = contactsData.map(contact => ({
+        ...contact,
+        profile: profilesData?.find(p => p.user_id === contact.contact_id) || {
+          username: 'Unknown',
+          full_name: null,
+          avatar_url: null,
+        }
+      }));
+
+      setContacts(contactsWithProfiles as any);
     } catch (error) {
       console.error('Error fetching contacts:', error);
     } finally {
