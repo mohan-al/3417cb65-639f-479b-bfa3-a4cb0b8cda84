@@ -19,10 +19,9 @@ interface Message {
 interface ChatMessagesProps {
   selectedContact: Contact | null;
   currentUserId: string;
-  onMessageRead?: () => void;
 }
 
-export const ChatMessages = ({ selectedContact, currentUserId, onMessageRead }: ChatMessagesProps) => {
+export const ChatMessages = ({ selectedContact, currentUserId }: ChatMessagesProps) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [sending, setSending] = useState(false);
@@ -55,16 +54,6 @@ export const ChatMessages = ({ selectedContact, currentUserId, onMessageRead }: 
 
       if (error) throw error;
       setMessages(data || []);
-
-      // Mark received messages as read
-      await supabase
-        .from('messages')
-        .update({ read_at: new Date().toISOString() })
-        .eq('sender_id', selectedContact.contact_id)
-        .eq('receiver_id', currentUserId)
-        .is('read_at', null);
-
-      onMessageRead?.();
     } catch (error) {
       console.error('Error fetching messages:', error);
     }

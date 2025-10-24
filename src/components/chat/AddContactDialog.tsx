@@ -11,7 +11,7 @@ import { Contact } from '@/pages/Chat';
 interface AddContactDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onContactAdded: () => void;
+  onContactAdded: (contact: Contact) => void;
 }
 
 export const AddContactDialog = ({ open, onOpenChange, onContactAdded }: AddContactDialogProps) => {
@@ -68,23 +68,34 @@ export const AddContactDialog = ({ open, onOpenChange, onContactAdded }: AddCont
         return;
       }
 
-      // Add contact request
-      const { error: contactError } = await supabase
+      // Add contact
+      const { data: newContact, error: contactError } = await supabase
         .from('contacts')
         .insert({
           user_id: user.id,
           contact_id: profiles.user_id,
-          status: 'pending',
-        });
+        })
+        .select()
+        .single();
 
       if (contactError) throw contactError;
 
       toast({
-        title: "Request sent!",
-        description: `Contact request sent to ${username}.`,
+        title: "Success!",
+        description: `${username} has been added to your contacts.`,
       });
 
-      onContactAdded();
+      // Create contact object with profile data
+      const contactWithProfile: Contact = {
+        ...newContact,
+        profile: {
+          username: profiles.username,
+          full_name: profiles.full_name,
+          avatar_url: profiles.avatar_url,
+        },
+      };
+
+      onContactAdded(contactWithProfile);
       setUsername('');
       onOpenChange(false);
     } catch (error: any) {
